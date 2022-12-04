@@ -1,4 +1,6 @@
+<!DOCTYPE html>
 <html>
+<title>School Fee Portal</title>
 <head>
 	<!-- <script type="text/javascript" src="add_Student.js"></script> -->
 	</head>
@@ -13,24 +15,6 @@
 <td>Admission No.</td>
 <td><input type="text" name="admno0" id="admno0" size="30"></td>
 </tr>
-<tr>
-<td>From Month</td>
-<td><select name="st0" id="st0">
-<option value="-1" selected>select..</option>
-<option value=0>April</option>
-<option value=1>May</option>
-<option value=2>June</option>
-<option value=3>July</option>
-<option value=4>August</option>
-<option value=5>September</option>
-<option value=6>October</option>
-<option value=7>Novemeber</option>
-<option value=8>Decmeber</option>
-<option value=9>January</option>
-<option value=10>Februrary</option>
-<option value=11>March</option>
-</select></td>
-</tr> 
 <tr>
 <td>Upto Month</td>
 <td><select name="en0" id="en0">
@@ -113,11 +97,17 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 $index=$_GET["index"];
 $allTotal=0;
+$dbusername="id18479409_hemantjhil";
+$dbpassword="Manoj1234567@";
+$dbname="id18479409_modernjhabra";
+$dbhost="localhost";
+$year = ( date('m') < 4 ) ? date('Y') - 1 : date('Y');
+$studentSession='student_'.$year;
 for($count=0;$count<=$index;$count++){
-if(isset($_GET["admno".$count], $_GET["st".$count], $_GET["en".$count])){
+if(isset($_GET["admno".$count], $_GET["en".$count])){
 echo "Fees Details:   ";
 	echo "<br>";
-$conn = mysqli_connect("127.0.0.1","root","","school");
+$conn = mysqli_connect($dbhost,$dbusername,$dbpassword,$dbname);
 
 // $counter=$_SESSION['count'];
 // for($i=0;$i<=$counter;$i++){
@@ -127,7 +117,8 @@ $admno=$_GET["admno".$count];
 $_SESSION['admno'.$count]=$admno;
 $en=$_GET['en'.$count];
 $_SESSION['en'.$count]=$en;
-$startMonth=mysqli_query($conn,"select paid_upto from student where admno=$admno");
+$allMonths=["January","February","March","April","May","June","July","August","September","October","November","December"];
+$startMonth=mysqli_query($conn,"select paid_upto from $studentSession where admno=$admno");
 //$re=$conn->query("$class");
 $startMon=$startMonth->fetch_assoc();
 $st=$startMon['paid_upto'];
@@ -138,170 +129,87 @@ echo "Total Months:   ";
 echo $mon;
 echo "<br>";
 echo "Starting Month:     ";
-if($st=="0"){
-	echo "April";
+if($st==12){
+	$st=0;
+}else{
+	$st+=1;
 }
-else if($st=='1'){
-	echo "May";
-}
-else if($st=='2'){
-	echo "June";
-}
-else if($st=="3"){
-	echo "July";
-}
-else if($st=="4"){
-	echo "August";
-}
-else if($st=="5"){
-	echo "September";
-}
-else if($st=="6"){
-	echo "October";
-}
-else if($st=="7"){
-	echo "November";
-}
-else if($st=="8"){
-	echo "December";
-}
-else if($st=="9"){
-	echo "January";
-}
-else if($st=="10"){
-	echo "February";
-}
-else if($st=="11"){
-	echo "March";
-}
+echo $allMonths[$st];
 echo "<br>";
 echo "End Month:     ";
-if($en=="1"){
-	echo "April";
-}
-else if($en=='2'){
-	echo "May";
-}
-else if($en=='3'){
-	echo "June";
-}
-else if($en=="4"){
-	echo "July";
-}
-else if($en=="5"){
-	echo "August";
-}
-else if($en=="6"){
-	echo "September";
-}
-else if($en=="7"){
-	echo "October";
-}
-else if($en=="8"){
-	echo "November";
-}
-else if($en=="9"){
-	echo "December";
-}
-else if($en=="10"){
-	echo "January";
-}
-else if($en=="11"){
-	echo "February";
-}
-else if($en=="12"){
-	echo "March";
-}
+echo $allMonths[$en];
 $admno=$_GET["admno".$count];
 echo "<br>";
-$class=mysqli_query($conn,"select class from student where admno=$admno");
+$class=mysqli_query($conn,"select class from $studentSession where admno=$admno");
 //$re=$conn->query("$class");
 $r1=$class->fetch_assoc();
 $r3=$r1['class'];
 echo "Class:   ".$r3;
 echo "<br>";
 
-$adf=mysqli_query($conn,"select fee from fees where class='ALL' and type='ADMISSION'");
-$adf1=$adf->fetch_assoc();
-$adf1=$adf1['fee'];
-$k1=(int)($admno/100);
-$d1=date("y");
-$ssf=mysqli_query($conn,"select fee from fees where class='ALL' and type='SESSION'");
-$ssf1=$ssf->fetch_assoc();
-$ssf1=$ssf1['fee'];
-$t1=0;
-if($k1==$d1){
-	if(($st<=0) && ($en>=1)){
-		echo "Admission Fee: ".$adf1;
-		$t1+=$adf1;
-		echo "<br>";
-	}
-	}
-else{
-	if(($st<=3) && ($en>=4)){
-		echo "Session Fee: ".$ssf1;
-		$t1+=$ssf1;
-		echo "<br>";
+$monthIndex=$st;
+if($en>3){ 				//when end month is before start of new year
+	while($monthIndex<=$en){
+		$cumulativeFee=mysqli_query($conn,"select fee,type from fees where class in ('ALL',$r3) and months_applicable=$monthIndex");
+		$cumulativeFeeValue=$cumulativeFee->fetch_assoc();
+		for($cumulativeFeeValue as $each){
+			$feeTitle=$each['title'];
+			$feeValue=$each['fee'];
+			echo "Month applicable".$allMonths[$monthIndex-1];
+			echo $feeTitle." : ".$feeValue;
+			$t1+=$feevalue;
+		}
+		$monthIndex++;
 	}
 }
-
-$fees=mysqli_query($conn,"select fee from fees where class='$r3' and type='TUTION'");
-$r2=$fees->fetch_assoc();
-//$r4=(float)$r2['fee'];
-$r2=$r2['fee'];
-$f1=$r2*$mon;
-echo "Tution Fee:   ".$f1;
-echo "<br>";
-
-$t1+=$f1;
-$qua=mysqli_query($conn,"select fee from fees where class='$r3' and type='EXAM'");
-$qua1=$qua->fetch_assoc();
-$qua1=$qua1['fee'];
-if(($st<=10) && ($en>=11)){
-echo "Exam Fee: ". 3*$qua1;
-$t1+=3*$qua1;
-echo "<br>";
-}
-else if(($st<=7) && ($en>=8)){
-echo "Exam Fee: ". 2*$qua1;
-$t1+=2*$qua1;
-echo "<br>";
-}
-else if(($st<=4) && ($en>=5)){
-echo "Exam Fee :".$qua1;
-$t1+=$qua1;
-echo "<br>";
-}
-if(($st<=5) && ($en>=6)){
-$gam=mysqli_query($conn,"select fee from fees where class='ALL' and type='GAME'");
-$gam1=$gam->fetch_assoc();
-$gam1=$gam1['fee'];
-echo "Game Fee: ". $gam1;
-$t1+=$gam1;
-echo "<br>";	
-}
-
-if(($st<=6) && ($en>=7)){
-$ele=mysqli_query($conn,"select fee from fees where class='ALL' and type='ELECTRIC'");
-$ele1=$ele->fetch_assoc();
-$ele1=$ele1['fee'];
-echo "Electric Fee: ".$ele1;
-$t1+=$ele1;
-echo "<br>";
-} 
-
-if(($st<8) && ($en>=9)){
-$ana=mysqli_query($conn,"select fee from fees where class='ALL' and type='ANNUAL'");
-$ana1=$ana->fetch_assoc();
-$ana1=$ana1['fee'];
-echo "Annual Function: ".$ana1;
-$t1+=$ana1;
-echo "<br/>";
+else {				//when end month is in start of new year
+	if($monthIndex>=4){				//when start month before new year
+		while($index<=12){
+			$cumulativeFee=mysqli_query($conn,"select fee,type from fees where class in ('ALL',$r3) and months_applicable=$monthIndex");
+			$cumulativeFeeValue=$cumulativeFee->fetch_assoc();
+			for($cumulativeFeeValue as $each){
+				$feeTitle=$each['title'];
+				$feeValue=$each['fee'];
+				echo "Month applicable".$allMonths[$monthIndex-1];
+				echo $feeTitle." : ".$feeValue;
+				$t1+=$feevalue;
+			}
+			$monthIndex++;
+		}
+		$index=0;
+		while($monthIndex<=$en){
+			$cumulativeFee=mysqli_query($conn,"select fee,type from fees where class in ('ALL',$r3) and months_applicable=$monthIndex");
+			$cumulativeFeeValue=$cumulativeFee->fetch_assoc();
+			for($cumulativeFeeValue as $each){
+				$feeTitle=$each['title'];
+				$feeValue=$each['fee'];
+				echo "Month applicable".$allMonths[$monthIndex-1];
+				echo $feeTitle." : ".$feeValue;
+				$t1+=$feevalue;
+			}
+			$monthIndex++;
+		}
 	}
-$route1=mysqli_query($conn,"select route from student where admno='$admno'");
-while ($row = mysqli_fetch_array($route1)) 
+	else{								//when start month is also in new year
+		while($monthIndex<=$en){
+				$cumulativeFee=mysqli_query($conn,"select fee,type from fees where class in ('ALL',$r3) and months_applicable=$monthIndex");
+				$cumulativeFeeValue=$cumulativeFee->fetch_assoc();
+				for($cumulativeFeeValue as $each){
+					$feeTitle=$each['title'];
+					$feeValue=$each['fee'];
+					echo "Month applicable".$allMonths[$monthIndex-1];
+					echo $feeTitle." : ".$feeValue;
+					$t1+=$feevalue;
+				}
+				$monthIndex++;
+			}
+		}
+	# code...
+}
+$route1=mysqli_query($conn,"select route from $studentSession where admno='$admno'");
+while ($row = mysqli_fetch_array($route1))
 {
-    $route = $row['route'];  
+    $route = $row['route'];
 }
 $tranf=mysqli_query($conn,"select rfee from transport where route='$route'");
 $tranf1=$tranf->fetch_assoc();
@@ -311,7 +219,7 @@ echo "Transport Fee: ".$tranf2;
 echo "<br>";
 $t1+=$tranf2;
 
-$due=mysqli_query($conn,"select dues from student where admno='$admno'");
+$due=mysqli_query($conn,"select dues from $studentSession where admno='$admno'");
 $due1=$due->fetch_assoc();
 $due1=$due1['dues'];
 $t2=$t1+$due1;
