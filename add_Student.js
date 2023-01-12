@@ -36,21 +36,23 @@ function addStudent(counter){
 	}
 	else{
 		count=localStorage["count"];
-		var count1=parseFloat(count)+1;
+		var count1=parseFloat(count);
 		var count3=(parseFloat(count)+1)*2-1;
 		window.console.log("final Hello"+count1);
-		let item=document.getElementById("student_fee"+count);
+		window.console.log("Current count value"+count1);
+		let item=document.getElementById("student_fee"+count1);
 		// var item_final=document.getElementById("final").querySelectorAll("fieldset")[0];
 		// item_final=item_final[count];
 		// let item1=item;
 		clone_node=item.cloneNode(true);
+		count1++;
 		// clone_node_final=item_final.cloneNode(true);
 		clone_node.id="student_fee"+count1;
 		(clone_node.querySelectorAll("input")[0]).id="admno"+count1;
 		
 		// (clone_node.querySelectorAll("select")[0]).id="st"+count1;
 		
-		(clone_node.querySelectorAll("select")[1]).id="en"+count1;
+		(clone_node.querySelectorAll("select")[0]).id="en"+count1;
 		
 				document.getElementById("index").value=count1;
 				// clone_node_final.id="final"+count;
@@ -66,9 +68,9 @@ function addStudent(counter){
 		// if(document.getElementById("final"+count)!=null){
 		// 	(document.getElementById("final"+count).querySelectorAll("legend")[0]).innerHTML="Fees"+count2;
 		// }
-		count=count+1;
-		localStorage["count"]=count;
-		sessionStorage.setItem("count",count);
+//		count=count+1;
+		localStorage["count"]=count1;
+		sessionStorage.setItem("count",count1);
 	}
 }
 window.onload=function(){
@@ -87,4 +89,6 @@ window.onload=function(){
 	document.getElementById("index").querySelectorAll("input").value=count;
 	window.console.log("Below");
 }
+
+
 }

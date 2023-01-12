@@ -2,25 +2,47 @@
 ob_start ();
 if (isset($_GET["login"]))
 {
-$conn = mysqli_connect("127.0.0.1","root","","school");
+$dbusername = "id18479409_hemantjhil";
+$dbpassword = "Manoj1234567@";
+$dbname = "id18479409_modernjhabra";
+$dbhost = "localhost";
+$conn = mysqli_connect($dbhost, $dbusername, $dbpassword, $dbname);
 session_start();
-$tot=$_SESSION['allTotal'];  //fee of all +previous dues of all
-$index=$_SESSION['index'];
+$tot=$_GET['allTotal'];  //fee of all +previous dues of all
+$index=$_GET['index'];
 $disc=$_GET["disc"];    //overall discount
+echo "total: ".$tot;
+echo "index: ".$index;
+echo "disc: ".$disc;
 $eachDisc=$disc/($index+1);     //each person discount
 $amtToPay=$tot-$disc;       //amount to be paid after discount
 $eachAmtToPay=$amtToPay/($index+1);
-$pay=$_GET["pay"];          //paid amout by guardian
+$pay=$_GET["paid"];          //paid amout by guardian
 $eachPay=$pay/($index+1);
-$remark=$_GET["rema"];
+$remark=$_GET["remarks"];
 $newDues=$amtToPay-$pay;    //new Dues all total;
 $eachNewDues=$newDues/($index+1);
 for($count=0;$count<=$index;$count++){
-$admno[$count]=$_SESSION['admno'.$count];
-$en[$count]=$_SESSION['en'.$count];
-$st[$count]=$_SESSION['st'.$count];
+$admno[$count]=$_GET['admno'.$count];
+$en[$count]=$_GET['en'.$count];
+
+//fetching start month of each student
+$year = date("m") < 4 ? date("Y") - 1 : date("Y");
+$studentSession = "student_" . $year;
+$paidUptoQuery = "select paid_upto from $studentSession where admno='$admno[$count]'";
+$startMonth = mysqli_query($conn, $paidUptoQuery);
+$startMon = $startMonth->fetch_assoc();
+$st = $startMon["paid_upto"];
+if (is_null($st)) {
+    $st = 4;
+} elseif ($st == 12) {
+    $st = 1;
+} else {
+    $st += 1;
+}
+
 // $tot2=$tot-$disc;
-$class=mysqli_query($conn,"select class from student where admno=$admno[$count]");
+$class=mysqli_query($conn,"select class from $studentSession where admno=$admno[$count]");
 //$re=$conn->query("$class");
 //$class1;
 $r1=$class->fetch_assoc();
@@ -184,10 +206,10 @@ else{
     fclose($myfile);
 }
 $month=date("F");
-if (!file_exists("F:\school\SCHOOL\Student fee details 2019-20\\{$month}\\{$Date1}")) {
-mkdir("F:\school\SCHOOL\Student fee details 2019-20\\{$month}\\{$Date1}",700,true);
-}
-$dir="F:\school\SCHOOL\Student fee details 2019-20\\{$month}\\{$Date1}";
+//if (!file_exists("F:\school\SCHOOL\Student fee details 2019-20\\{$month}\\{$Date1}")) {
+//mkdir("F:\school\SCHOOL\Student fee details 2019-20\\{$month}\\{$Date1}",700,true);
+//}
+//$dir="F:\school\SCHOOL\Student fee details 2019-20\\{$month}\\{$Date1}";
 $allAdmNo="";
 for($i=0;$i<=$index;$i++){
     $allAdmNo.=$admno[$i].',';
