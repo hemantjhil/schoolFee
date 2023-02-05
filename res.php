@@ -1,19 +1,29 @@
+
+
 <?php
+//echo "YES";
 ob_start ();
+error_reporting(E_ALL);
+// ini_set('display_errors', '1');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+// error_reporting(E_ALL);
 if (isset($_GET["login"]))
 {
 $dbusername = "id18479409_hemantjhil";
 $dbpassword = "Manoj1234567@";
 $dbname = "id18479409_modernjhabra";
 $dbhost = "localhost";
-$conn = mysqli_connect($dbhost, $dbusername, $dbpassword, $dbname);
 session_start();
 $tot=$_GET['allTotal'];  //fee of all +previous dues of all
 $index=$_GET['index'];
 $disc=$_GET["disc"];    //overall discount
-echo "total: ".$tot;
-echo "index: ".$index;
-echo "disc: ".$disc;
+$route = [];
+$conn = mysqli_connect($dbhost, $dbusername, $dbpassword, $dbname);
+
+// echo "total: ".$tot;
+// echo "index: ".$index;
+//echo "disc: ".$disc;
 $eachDisc=$disc/($index+1);     //each person discount
 $amtToPay=$tot-$disc;       //amount to be paid after discount
 $eachAmtToPay=$amtToPay/($index+1);
@@ -21,25 +31,33 @@ $pay=$_GET["paid"];          //paid amout by guardian
 $eachPay=$pay/($index+1);
 $remark=$_GET["remarks"];
 $newDues=$amtToPay-$pay;    //new Dues all total;
+
+//unique identifer
+$uniqueKey= $tot.''.$index.''.$disc.''.$pay.''.$remark;
+
 $eachNewDues=$newDues/($index+1);
+$route=[];
+
 for($count=0;$count<=$index;$count++){
+    //echo "yes";
 $admno[$count]=$_GET['admno'.$count];
 $en[$count]=$_GET['en'.$count];
-
+$st[$count]=$_GET['st'.$count];
 //fetching start month of each student
 $year = date("m") < 4 ? date("Y") - 1 : date("Y");
 $studentSession = "student_" . $year;
-$paidUptoQuery = "select paid_upto from $studentSession where admno='$admno[$count]'";
-$startMonth = mysqli_query($conn, $paidUptoQuery);
-$startMon = $startMonth->fetch_assoc();
-$st = $startMon["paid_upto"];
-if (is_null($st)) {
-    $st = 4;
-} elseif ($st == 12) {
-    $st = 1;
-} else {
-    $st += 1;
-}
+// $paidUptoQuery = "select paid_upto from $studentSession where admno='$admno[$count]'";
+// $startMonth = mysqli_query($conn, $paidUptoQuery);
+// $startMon = $startMonth->fetch_assoc();
+// $st = $startMon["paid_upto"];
+// //echo "st value : ".$st;
+// if (is_null($st)) {
+//     $st = 4;
+// } elseif ($st == 12) {
+//     $st = 1;
+// } else {
+//     $st += 1;
+// }
 
 // $tot2=$tot-$disc;
 $class=mysqli_query($conn,"select class from $studentSession where admno=$admno[$count]");
@@ -47,178 +65,137 @@ $class=mysqli_query($conn,"select class from $studentSession where admno=$admno[
 //$class1;
 $r1=$class->fetch_assoc();
 $classColumn[$count]=$r1['class'];
-//$r5=(float)$r3;
-        //echo $r3;
-        //echo "<br>";
-//echo $class;
-//echo "$class";
-$name1=mysqli_query($conn,"select studname from student where admno='$admno[$count]'");
+
+$name1=mysqli_query($conn,"select name from student_detail where admno='$admno[$count]'");
 while ($row = mysqli_fetch_array($name1)) 
 {
-    $name[$count] = $row['studname'];  
+    $name[$count] = $row['name'];
 }
-$fname1=mysqli_query($conn,"select fname from student where admno='$admno[$count]'");
+$fname1=mysqli_query($conn,"select father_name from student_detail where admno='$admno[$count]'");
 while ($row = mysqli_fetch_array($fname1)) 
 {
-    $fname = $row['fname'];  
+    $fname = $row['father_name'];
 }
-$addr1=mysqli_query($conn,"select addr from student where admno='$admno[$count]'");
+$addr1=mysqli_query($conn,"select address from student_detail where admno='$admno[$count]'");
 while ($row = mysqli_fetch_array($addr1)) 
 {
-    $addr = $row['addr'];  
+    $addr = $row['address'];
 }
-$mob1=mysqli_query($conn,"select mob1 from student where admno='$admno[$count]'");
+$mob1=mysqli_query($conn,"select mob1 from student_detail where admno='$admno[$count]'");
 while ($row = mysqli_fetch_array($mob1)) 
 {
     $mob = $row['mob1'];  
 }
-$route1=mysqli_query($conn,"select route from student where admno='$admno[$count]'");
-while ($row = mysqli_fetch_array($route1)) 
+$route1=mysqli_query($conn,"select transport_route from $studentSession where admno='$admno[$count]'");
+$route[$count] = null;
+// echo "count : ".$count;
+while ($row = mysqli_fetch_array($route1))
 {
-    $route[$count] = $row['route'];  
+    $route[$count] = $row['transport_route'];
+    //$route=$route[$count];
 }
-// echo $route[$count];
-// $name2=$name1->fetch_assoc();
-// $name=(String)$name2;
-$fees=mysqli_query($conn,"select fee from fees where class='$classColumn[$count]' and type='TUTION'");
-$r2[$count]=$fees->fetch_assoc();
-//$r4=(float)$r2['fee'];
-$feeCell=$r2[$count];
-$eachfee[$count]=$feeCell['fee'];
-$qua=mysqli_query($conn,"select fee from fees where class='$classColumn[$count]' and type='EXAM'");
-$qua9=$qua->fetch_assoc();
-$quarterly[$count]=$qua->fetch_assoc();
-$qua1[$count]=$qua9['fee'];
-$gam=mysqli_query($conn,"select fee from fees where class='ALL' and type='GAME'");
-$gam7=$gam->fetch_assoc();
-$gameFee[$count]=$gam->fetch_assoc();
-$gam1[$count]=$gam7['fee'];
-$ele=mysqli_query($conn,"select fee from fees where class='ALL' and type='ELECTRIC'");
-$ele2=$ele->fetch_assoc();
-$electricFee[$count]=$gam->fetch_assoc();
-$ele1[$count]=$ele2['fee'];
-$ana=mysqli_query($conn,"select fee from fees where class='ALL' and type='ANNUAL'");
-$ana2=$ana->fetch_assoc();
-$ana1[$count]=$ana2['fee'];
-$adf=mysqli_query($conn,"select fee from fees where class='ALL' and type='ADMISSION'");
-$adf1=$adf->fetch_assoc();
-$adf1=$adf1['fee'];
-$ssf=mysqli_query($conn,"select fee from fees where class='ALL' and type='SESSION'");
-$ssf1=$ssf->fetch_assoc();
-$ssf1=$ssf1['fee'];
-$k1[$count]=(int)(($admno[$count])/100);
-$d1[$count]=date("y");
-$tranf=mysqli_query($conn,"select rfee from transport where route='$route[$count]'");
-// $tranf5[$count]=$tranf->fetch_assoc();
-$tranf6=$tranf->fetch_assoc();
-$tranf1[$count]=$tranf6['rfee'];
-// echo $tranf1[$count];
-$mon[$count]=$en[$count]-$st[$count];
-$f1[$count]=$eachfee[$count]*$mon[$count];
-$tranf2[$count]=$tranf1[$count]*$mon[$count];
         // echo $mon;
         // echo "<br>";
-$paid=mysqli_query($conn,"select paid_amt from student where admno=$admno[$count]");
+$paid=mysqli_query($conn,"select amt_paid from $studentSession where admno=$admno[$count]");
 $r3=$paid->fetch_assoc();
-$sql0="update student set discount=$eachDisc+discount where admno='$admno[$count]'";
-if(mysqli_query($conn,$sql0)){
+//echo $eachDisc;
 
-}
-$sql="update student set remark='$remark' where admno='$admno[$count]'";
-if(mysqli_query($conn,$sql)){
+//check unique value for idempotent handle
+$receipts=mysqli_query($conn,"select receipt_no from receipts where unique_id='$uniqueKey'");
+$receiptAss=$receipts->fetch_assoc();
 
-}
-$sql1="update student set paid_amt='$eachPay'+paid_amt where admno='$admno[$count]'";
-if(mysqli_query($conn,$sql1)){
-
-}
-$sql2="update student set paid_upto='$en[$count]' where admno='$admno[$count]'";
-if(mysqli_query($conn,$sql2)){
-
-}
-$total1=$eachfee[$count]*$mon[$count];
-
-$due=mysqli_query($conn,"select dues from student where admno='$admno[$count]'");
+//$re=$conn->query("$class");
+//$class1;
+$due=mysqli_query($conn,"select dues from $studentSession where admno='$admno[$count]'");
 $due1=$due->fetch_assoc();
 // $dueCell=$due1[$count];
 $dueEach[$count]=$due1['dues'];
-// $tot1=$tot+$dueEach;
-// $tot3=$tot2+$due1;  //previous dues+fee after dues
-// $dues=$tot3-$pay;
-$sql2="update student set dues='$eachNewDues' where admno='$admno[$count]'";
+
+$isNew = false;
+$rn1=null;
+// echo $receipts;
+if(is_null($receiptAss)){
+$isNew=true;
+$sql0="update $studentSession set discount=$eachDisc+discount where admno='$admno[$count]'";
+if(mysqli_query($conn,$sql0)){
+
+}
+$sql="update $studentSession set remark='$remark' where admno='$admno[$count]'";
+if(mysqli_query($conn,$sql)){
+
+}
+$sql1="update $studentSession set amt_paid=$eachPay+amt_paid where admno='$admno[$count]'";
+if(mysqli_query($conn,$sql1)){
+
+}
+$sql2="update $studentSession set paid_upto='$en[$count]' where admno='$admno[$count]'";
 if(mysqli_query($conn,$sql2)){
 
 }
-$class=mysqli_query($conn,"select class from student where admno=$admno[$count]");
-$class1='';
-while($row=mysqli_fetch_array($class))
-{
-    $class1[$count]=$row['class'];
-}
-}
-$Date1=date("Y-m-d");
-$a1="";
-for($i=0;$i<=$index;$i++){
-$a1[$i]=strval($admno[$i]);
-}
-$a2=strval($pay);
+//$total1=$eachfee[$count]*$mon[$count];
 
-$rn=mysqli_query($conn,"select rec from reciept where year=2020");
+$sql2="update $studentSession set dues='$eachNewDues' where admno='$admno[$count]'";
+if(mysqli_query($conn,$sql2)){
+
+}
+
+
+}else{
+    $receiptColumn=$receiptAss['receipt_no'];
+    $rn1=$receiptColumn;
+}
+
+// $tot1=$tot+$dueEach;
+// $tot3=$tot2+$due1;  //previous dues+fee after dues
+// $dues=$tot3-$pay;
+
+
+}
+
+$allAdmNo="";
+$allNames="";
+for($i=0;$i<=$index;$i++){
+    $allAdmNo.=$admno[$i].',';
+    // $allAdmno.=',';
+    $allNames.=$name[$i].',';
+}
+//update receipt
+if($isNew){
+$receiptQuery="select receipt_no from receipt_count where year=2022";
+$rn=mysqli_query($conn,$receiptQuery);
+//echo $receiptQuery;
 $rn1=$rn->fetch_assoc();
-$rn1=$rn1['rec'];
+$rn1=$rn1['receipt_no'];
 //$rn2=0;
 $rn1+=1;
-$sql5="update reciept set rec='$rn1' where year=2020";
+$sql5="update receipt_count set receipt_no='$rn1' where year='2022'";
 if(mysqli_query($conn,$sql5)){
 
 }
+$receiptsQuery="insert into receipts  (receipt_no, amount_paid, comment, unique_id, student_ids, student_names)
+VALUES ('$rn1', '$pay', '$remark','$uniqueKey','$allAdmNo','$allNames')";
+if(mysqli_query($conn,$receiptsQuery)){
 
-if(!file_exists("F:\school\SCHOOL\Student fee details 2019-20\Daily Fee Deposit\\$Date1.txt")){
-    $q11="update fee_coll set amt=$pay where comment=1";
-    if(mysqli_query($conn,$q11)){
-
-    }
-    $a4=strval($pay);
-    $a3=$a1.','.$name.','.$a2.', '.$a4.' ;'.PHP_EOL;
-    $myfile=fopen("F:\school\SCHOOL\Student fee details 2019-20\Daily Fee Deposit\\$Date1.txt","a+");
-
-    fwrite($myfile,$a3);
-    fclose($myfile);
 }
-else{
-    $t10=mysqli_query($conn,"select amt from fee_coll where comment=1");
-    $t11=$t10->fetch_assoc();
-    $t11=$t11['amt'];
-    $t11=$pay+$t11;
-    $q12="update fee_coll set amt=$t11 where comment=1";
-    if(mysqli_query($conn,$q12)){
-
-    }
-    $a4=strval($t11);
-    $myfile=fopen("F:\school\SCHOOL\Student fee details 2019-20\Daily Fee Deposit\\$Date1.txt","a+");
-    for($i=0;$i<=$index;$i++){
-        $a3=$a1[$i].','.$name[$i].' ;'.PHP_EOL;
-    
-       fwrite($myfile,$a3);
-    }
-    $a5='paid in total '.$a4.PHP_EOL;
-    fwrite($myfile,$a5);
-    fclose($myfile);
 }
+$Date1=date("Y-m-d");
+//$a1="";
+//for($i=0;$i<=$index;$i++){
+//$a1[$i]=strval($admno[$i]);
+//}
+$a2=strval($pay);
+
 $month=date("F");
 //if (!file_exists("F:\school\SCHOOL\Student fee details 2019-20\\{$month}\\{$Date1}")) {
 //mkdir("F:\school\SCHOOL\Student fee details 2019-20\\{$month}\\{$Date1}",700,true);
 //}
 //$dir="F:\school\SCHOOL\Student fee details 2019-20\\{$month}\\{$Date1}";
-$allAdmNo="";
-for($i=0;$i<=$index;$i++){
-    $allAdmNo.=$admno[$i].',';
-    // $allAdmno.=',';
-}
-$fileNl=$dir."\\".$allAdmNo.".pdf";
+
+$fileNl=$allAdmNo.".pdf";
 
         //echo $total;
-require('fpdf181/fpdf.php');
+
+require('fpdf185/fpdf.php');
 
 //A4 width : 219mm
 //default margin : 10mm each side
@@ -231,7 +208,7 @@ $pdf->AddPage();
 //output the result
 //set font to arial, bold, 14pt
 $pdf->SetFont('Arial','B',14);
-$img1="F:\school\SCHOOL\logo.jpg";
+$img1="school logo blue.png";
 //$pdf->imageUniformToFill($img1);
 //$pdf->Cell( 100, 40, $pdf->Image($img1, $pdf->GetX(), $pdf->GetY()+5, 33.78), 0, 1 ,'R', false);
 $pdf->Image($img1,100,15,35,35);
@@ -247,19 +224,16 @@ $pdf->Cell(130 ,5,'JHABRA DEIPUR JALALPUR JANSA',0,0);
 $pdf->Cell(59 ,5,'',0,1);//end of line
 
 $pdf->Cell(130 ,5,'VARANASI INDIA 221405',0,0);
+
 $Date=date("d/m/Y");
 $pdf->Cell(25 ,5,'Date',0,0);
 $pdf->Cell(34 ,5,$Date,0,1);//end of line
 
-$last = 100; // This is fetched from database
-$last++;
-$invoice_number = sprintf('%07d', $last);
-
-$pdf->Cell(130 ,5,'Mob. 9795278925',0,0);
+$pdf->Cell(130 ,5,'Mob. 9451093677',0,0);
 $pdf->Cell(25 ,5,'Invoice #',0,0);
 $pdf->Cell(34 ,5,$rn1,0,1);//end of line
 
-$pdf->Cell(130 ,5,'Mail ID mpsvns1995@gmail.com',0,0);
+$pdf->Cell(130 ,5,'Mail ID modern@mpsvns.in',0,0);
 $pdf->Cell(25 ,5,'Student ID',0,0);
 
 $pdf->Cell(34 ,5,$allAdmNo,0,1);//end of line
@@ -272,12 +246,12 @@ $pdf->Cell(100 ,5,'Bill to',0,1);//end of line
 
 //add dummy cell at beginning of each line for indentation
 $pdf->Cell(10 ,5,'',0,0);
-for($i=0;$i<=$index;$i++){
-$pdf->Cell(90 ,5,$name[$i],0,1);
-}
+// for($i=0;$i<=$index;$i++){
+$pdf->Cell(90 ,5, $allNames,0,1);
+// }
 
 $pdf->Cell(10 ,5,'',0,0);
-$pdf->Cell(90 ,5,'S/O '.$fname,0,1);
+$pdf->Cell(90 ,5,'Parents '.$fname,0,1);
 
 $pdf->Cell(10 ,5,'',0,0);
 $pdf->Cell(90 ,5,$addr,0,1);
@@ -285,7 +259,7 @@ $pdf->Cell(90 ,5,$addr,0,1);
 $pdf->Cell(10 ,5,'',0,0);
 $pdf->Cell(90 ,5,$mob,0,1);
 
-//make a dummy empty cell as a vertical spacer    
+//make a dummy empty cell as a vertical spacer
 //$pdf->Cell(189 ,10,'',0,1);//end of line
 
 //invoice contents
@@ -301,112 +275,325 @@ $pdf->SetFont('Arial','',12);
 // $t1=0;
 //Numbers are right-aligned so we give 'R' after new line parameter
 for($i=0;$i<=$index;$i++){
-if($k1[$i]==$d1[$i]){
-    $pdf->Cell(100 ,5,'Admission Fees',1,0);
-    $pdf->Cell(25 ,5,strval($adf1),1,0);
-    $pdf->Cell(25 ,5,'-',1,0);
-    $pdf->Cell(39 ,5,strval($adf1),1,1,'R');
-    // $t1=$t1+$adf1[$i];
-}
-else{
-    $sessionFee=$ssf1;
-    $sessFee=strval($sessionFee);
-    $pdf->Cell(100 ,5,'Session Fees',1,0);
-    $pdf->Cell(25 ,5,$sessFee,1,0);
-    $pdf->Cell(25 ,5,'-',1,0);
-    $pdf->Cell(39 ,5,$sessFee,1,1,'R');
-    // $t1=$t1+$ssf1;
-}
-// echo $eachfee[$i];
-// $tutFee=$r2[$i];
-// $tF=strval();
-$monTot=$mon[$i];
-$monTotal=strval($monTot);
-$FeeTot=$f1[$i];
-$feeTotal=strval($FeeTot);
-$pdf->Cell(100 ,5,'Tuition Fees',1,0);
-$pdf->Cell(25 ,5,$eachfee[$i],1,0);
-$pdf->Cell(25 ,5,$monTotal,1,0);
-$pdf->Cell(39 ,5,$feeTotal,1,1,'R');//end of line
-// $t1+=$f1;
-// //$examt=$f1;
-// $examt=0;
-if(($st[$i]<=4) && ($en[$i]>=5)){
-$pdf->Cell(100 ,5,'Quarterly Exam Fee',1,0);
-// echo $qua1[0];
-$pdf->Cell(25 ,5,$qua1[$i],1,0);
-$pdf->Cell(25 ,5,'-',1,0);
-// $examt=$examt+$qua1;
-$pdf->Cell(39 ,5,$qua1[$i],1,1,'R');//end of line
-}
-if(($st[$i]<=7) && ($en[$i]>=8)){
-$pdf->Cell(100 ,5,'Halfyearly Exam Fee',1,0);
-$pdf->Cell(25 ,5,$qua1[$i],1,0);
-$pdf->Cell(25 ,5,'-',1,0);
-// $examt=$examt+$qua1;
-$pdf->Cell(39 ,5,$qua1[$i],1,1,'R');
-}
-if(($st[$i]<=10) && ($en[$i]>=11)){
-$pdf->Cell(100 ,5,'Annual Exam Fee',1,0);
-$pdf->Cell(25 ,5,$qua1[$i],1,0);
-$pdf->Cell(25 ,5,'-',1,0);
-// $examt=$examt+$qua1;
-$pdf->Cell(39 ,5,$qua1[$i],1,1,'R');
-//$t1=$t1+$examt;
+$admno=$admno[$i];
+$eachEn=$en[$i];
+$eachRoute=$route[$i];
+$eachDues=$dueEach[$i];
+//initalizing total amount 0
+$t1 = 0;
+$allMonths = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December"
+        ];
+
+$firstTwoDigitOfAdmNo=(int)(($admno)/100);
+$sessionStartDigits=fmod($year,100);
+$monthIndex = $st[$i];
+$pdf->SetFont('Arial','B',12);
+$pdf->Cell(100 ,5,$name[$i],1,1);
+$pdf->SetFont('Arial','',12);
+if ($eachEn > 3)
+        {   //when end month is before start of new year
+            //echo "Month Index : ".$monthIndex;
+            while ($monthIndex <= $eachEn)
+            {
+                
+                runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf);
+                // echo "Month applicable" .$allMonths[$monthIndex - 1];
+                // $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
+                //     admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
+                // //echo $feeQuery;
+                // $cumulativeFee = mysqli_query($conn, $feeQuery);
+                // // echo "</br>";
+                // while ($each = mysqli_fetch_array($cumulativeFee)) {
+                //     $feeTitle = $each[1];
+                //     $feeValue = $each[0];
+                //     if($feeTitle=="ADMISSION FEE"){
+                //         if($sessionStartDigits==$firstTwoDigitOfAdmNo){
+                //             $pdf->Cell(100 ,5,$feeTitle,1,0);
+                //             $pdf->Cell(25 ,5,$feeValue,1,0);
+                //             $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                //             $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                //             // echo $feeTitle . " : " . $feeValue;
+                //         }
+                //     }else{
+                //         if($feeTitle=="SESSION FEE"){
+                //             if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
+                //                 $pdf->Cell(100 ,5,$feeTitle,1,0);
+                //                 $pdf->Cell(25 ,5,$feeValue,1,0);
+                //                 $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                //                 $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                //                 // echo $feeTitle . " : " . $feeValue;
+                //             }
+                //         }else{
+                //             $pdf->Cell(100 ,5,$feeTitle,1,0);
+                //             $pdf->Cell(25 ,5,$feeValue,1,0);
+                //             $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                //             $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                //             // echo $feeTitle . " : " . $feeValue;
+                //         }
+                //     }
+                //     // echo "</br>";
+                //     $t1 += $feeValue;
+                // }
+                // if(!is_null($eachRoute)){
+                //     $tranf = mysqli_query(
+                //                 $conn,
+                //                 "select rfee from transport where id='$eachRoute' ");
+                //     if(!is_bool($tranf)){
+                //         $tranf1 = $tranf->fetch_assoc();
+                //         $tranf1 = $tranf1["rfee"];
+                //         $tranf2 = $tranf1;
+                //         $t1 += $tranf2;
+                //         $pdf->Cell(100 ,5,"TRANSPORT FEE ",1,0);
+                //         $pdf->Cell(25 ,5,$tranf2,1,0);
+                //         $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                //         $pdf->Cell(39 ,5,$tranf2,1,1,'R');
+                //         // echo "TRANSPORT FEE: " . $tranf2;
+                //         // echo "</br>";
+                //     }
+                // }
+                //echo "</br>";
+                $monthIndex++;
+            }
+        }
+else{ //when end month is in start of new year
+            if ($monthIndex >= 4)
+            { //when start month before new year
+                while ($monthIndex <= 12)
+                {
+                    // 
+                    runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$t1,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf);
+                    //echo "Month Index : ".$monthIndex;
+                    // echo "Month applicable" .$allMonths[$monthIndex - 1];
+                    // $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
+                    //     admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
+                    // //echo $feeQuery;
+                    // $cumulativeFee = mysqli_query($conn, $feeQuery);
+                    // echo "</br>";
+                    // while ($each = mysqli_fetch_array($cumulativeFee)) {
+                    //     $feeTitle = $each[1];
+                    //     $feeValue = $each[0];
+                    //     if($feeTitle=="ADMISSION FEE"){
+                    //         if($sessionStartDigits==$firstTwoDigitOfAdmNo){
+                    //             $pdf->Cell(100 ,5,$feeTitle,1,0);
+                    //             $pdf->Cell(25 ,5,$feeValue,1,0);
+                    //             $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                    //             $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                    //             // echo $feeTitle . " : " . $feeValue;
+                    //         }
+                    //     }else{
+                    //         if($feeTitle=="SESSION FEE"){
+                    //             if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
+                    //                 $pdf->Cell(100 ,5,$feeTitle,1,0);
+                    //                 $pdf->Cell(25 ,5,$feeValue,1,0);
+                    //                 $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                    //                 $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                    //                 // echo $feeTitle . " : " . $feeValue;
+                    //             }
+                    //         }else{
+                    //             $pdf->Cell(100 ,5,$feeTitle,1,0);
+                    //             $pdf->Cell(25 ,5,$feeValue,1,0);
+                    //             $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                    //             $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                    //             // echo $feeTitle . " : " . $feeValue;
+                    //         }
+                    //     }
+                    //     echo "</br>";
+                    //     $t1 += $feeValue;
+                    // }
+                    // if(!is_null($eachRoute)){
+                    //     $tranf = mysqli_query(
+                    //                     $conn,
+                    //                     "select rfee from transport where id='$eachRoute'"
+                    //                 );
+                    //     if(!is_bool($tranf)){
+                    //         $tranf1 = $tranf->fetch_assoc();
+                    //         $tranf1 = $tranf1["rfee"];
+                    //         $tranf2 = $tranf1;
+                    //         $t1 += $tranf2;
+                    //         $pdf->Cell(100 ,5,"TRANSPORT FEE ",1,0);
+                    //         $pdf->Cell(25 ,5,$tranf2,1,0);
+                    //         $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                    //         $pdf->Cell(39 ,5,$tranf2,1,1,'R');
+                    //         // echo "TRANSPORT FEE: " . $tranf2;
+                    //         // echo "</br>";
+                    //     }
+                    // }
+                    //echo "</br>";
+                    $monthIndex++;
+                }
+                $monthIndex = 1;
+                while ($monthIndex <= $eachEn)
+                {
+                    runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$t1,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf);
+                    //echo "Month Index : ".$monthIndex;
+                    // echo "Month applicable" .$allMonths[$monthIndex - 1];
+                    // $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
+                    //     admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
+                    // //echo $feeQuery;
+                    // $cumulativeFee = mysqli_query($conn, $feeQuery);
+                    // // echo "</br>";
+                    // while ($each = mysqli_fetch_array($cumulativeFee)) {
+                    //     $feeTitle = $each[1];
+                    //     $feeValue = $each[0];
+                    //     if($feeTitle=="ADMISSION FEE"){
+                    //         if($sessionStartDigits==$firstTwoDigitOfAdmNo){
+                    //                 $pdf->Cell(100 ,5,$feeTitle,1,0);
+                    //                 $pdf->Cell(25 ,5,$feeValue,1,0);
+                    //                 $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                    //                 $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                    //             // echo $feeTitle . " : " . $feeValue;
+                    //         }
+                    //     }else{
+                    //         if($feeTitle=="SESSION FEE"){
+                    //             if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
+                    //                 $pdf->Cell(100 ,5,$feeTitle,1,0);
+                    //                 $pdf->Cell(25 ,5,$feeValue,1,0);
+                    //                 $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                    //                 $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                    //                 // echo $feeTitle . " : " . $feeValue;
+                    //             }
+                    //         }else{
+                    //             $pdf->Cell(100 ,5,$feeTitle,1,0);
+                    //             $pdf->Cell(25 ,5,$feeValue,1,0);
+                    //             $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                    //             $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                    //             // echo $feeTitle . " : " . $feeValue;
+                    //         }
+                    //     }
+                    //     // echo "</br>";
+                    //     $t1 += $feeValue;
+                    // }
+                    // if(!is_null($eachRoute)){
+                    //     $tranf = mysqli_query(
+                    //                     $conn,
+                    //                     "select rfee from transport where id='$eachRoute'"
+                    //                 );
+                    //     if(!is_bool($tranf)){
+                    //         $tranf1 = $tranf->fetch_assoc();
+                    //         $tranf1 = $tranf1["rfee"];
+                    //         $tranf2 = $tranf1;
+                    //         $t1 += $tranf2;
+                    //         $pdf->Cell(100 ,5,"TRANSPORT FEE ",1,0);
+                    //         $pdf->Cell(25 ,5,$tranf2,1,0);
+                    //         $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                    //         $pdf->Cell(39 ,5,$tranf2,1,1,'R');
+                    //         // echo "TRANSPORT FEE: " . $tranf2;
+                    //         // echo "</br>";
+                    //     }
+                    // }
+                    //echo "</br>";
+                    $monthIndex++;
+                }
+            } else
+            {   //when start month is also in new year
+                while ($monthIndex <= $eachEn)
+                {
+                    runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$t1,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf);
+                    //echo "Month Index : ".$monthIndex;
+                    // echo "Month applicable" .$allMonths[$monthIndex - 1];
+                    // $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
+                    //     admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
+                    // //echo $feeQuery;
+                    // $cumulativeFee = mysqli_query($conn, $feeQuery);
+                    // echo "</br>";
+                    // while ($each = mysqli_fetch_array($cumulativeFee)) {
+                    //     $feeTitle = $each[1];
+                    //     $feeValue = $each[0];
+                    //     if($feeTitle=="ADMISSION FEE"){
+                    //         if($sessionStartDigits==$firstTwoDigitOfAdmNo){
+                    //             $pdf->Cell(100 ,5,$feeTitle,1,0);
+                    //             $pdf->Cell(25 ,5,$feeValue,1,0);
+                    //             $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                    //             $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                    //             // echo $feeTitle . " : " . $feeValue;
+                    //         }
+                    //     }else{
+                    //         if($feeTitle=="SESSION FEE"){
+                    //             if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
+                    //                 $pdf->Cell(100 ,5,$feeTitle,1,0);
+                    //                 $pdf->Cell(25 ,5,$feeValue,1,0);
+                    //                 $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                    //                 $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                    //                 // echo $feeTitle . " : " . $feeValue;
+                    //             }
+                    //         }else{
+                    //             $pdf->Cell(100 ,5,$feeTitle,1,0);
+                    //             $pdf->Cell(25 ,5,$feeValue,1,0);
+                    //             $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                    //             $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                    //             // echo $feeTitle . " : " . $feeValue;
+                    //         }
+                    //     }
+                    //     // echo "</br>";
+                    //     $t1 += $feeValue;
+                    // }
+                    // if(!is_null($eachRoute)){
+                    //     $tranf = mysqli_query(
+                    //                     $conn,
+                    //                     "select rfee from transport where id='$eachRoute'"
+                    //                 );
+                    //     if(!is_bool($tranf)){
+                    //         $tranf1 = $tranf->fetch_assoc();
+                    //         $tranf1 = $tranf1["rfee"];
+                    //         $tranf2 = $tranf1;
+                    //         $t1 += $tranf2;
+                    //         $pdf->Cell(100 ,5,"TRANSPORT FEE ",1,0);
+                    //         $pdf->Cell(25 ,5,$tranf2,1,0);
+                    //         $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                    //         $pdf->Cell(39 ,5,$tranf2,1,1,'R');
+                    //         // echo "TRANSPORT FEE: " . $tranf2;
+                    //         // echo "</br>";
+                    //     }
+                    // }
+                    //echo "</br>";
+                    $monthIndex++;
+                }
+            }
+
+            // $dueEach[$count]
+            # code...
+
 }
 
-// $t1+=$examt;
-if(($st[$i]<=5) && ($en[$i]>=6)){
-$pdf->Cell(100 ,5,'Game Fee',1,0);
-$pdf->Cell(25 ,5,$gam1[$i],1,0);
-$pdf->Cell(25 ,5,'-',1,0);
-$pdf->Cell(39 ,5,$gam1[$i],1,1,'R');//end of line
-// $t1=$t1+$gam1;
+            $pdf->Cell(100 ,5,"PREVIOUS DUES ",1,0);
+            $pdf->Cell(25 ,5,$eachDues,1,0);
+            $pdf->Cell(25 ,5,'-',1,0);
+            $pdf->Cell(39 ,5,$eachDues,1,1,'R');
+
+
+
+
 }
 
-if(($st[$i]<=6) && ($en[$i]>=7)){
-$pdf->Cell(100 ,5,'Electric Fee',1,0);
-$pdf->Cell(25 ,5,$ele1[$i],1,0);
-$pdf->Cell(25 ,5,'-',1,0);
-$pdf->Cell(39 ,5,$ele1[$i],1,1,'R');//end of line
-// $t1=$t1+$ele1;
-}
 
-if(($st[$i]<8) && ($en[$i]>=9)){
-$pdf->Cell(100 ,5,'Annual Function',1,0);
-$pdf->Cell(25 ,5,$ana1[$i],1,0);
-$pdf->Cell(25 ,5,'-',1,0);
-$pdf->Cell(39 ,5,$ana1[$i],1,1,'R');//end of line
-// $t1=$t1+$ana1;
-}
-
-$pdf->Cell(100 ,5,'Transport Fee',1,0);
-$pdf->Cell(25 ,5,$tranf1[$i],1,0);
-$pdf->Cell(25 ,5,$mon[$i],1,0);
-$pdf->Cell(39 ,5,$tranf2[$i],1,1,'R');
-// $t1+=$tranf2;
-
-$pdf->Cell(122 ,5,'',0,0);
-$pdf->Cell(25 ,5,'Prev. Dues',0,0);
-$pdf->Cell(8 ,5,'Rs',1,0);
-$pdf->Cell(34 ,5,$dueEach[$i],1,1,'R');
-}
 
 $pdf->Cell(122 ,5,'',0,0);
 $pdf->Cell(25 ,5,'Total',0,0);
 $pdf->Cell(8 ,5,'Rs',1,0);
 $pdf->Cell(34 ,5,$tot,1,1,'R');//end of line
+if($disc>0){
+    $pdf->Cell(122 ,5,'',0,0);
+    $pdf->Cell(25 ,5,'Discount',0,0);
+    $pdf->Cell(8 ,5,'Rs',1,0);
+    $pdf->Cell(34 ,5,$disc,1,1,'R');//end of line
 
-$pdf->Cell(122 ,5,'',0,0);
-$pdf->Cell(25 ,5,'Discount',0,0);
-$pdf->Cell(8 ,5,'Rs',1,0);
-$pdf->Cell(34 ,5,$disc,1,1,'R');//end of line
-
-$pdf->Cell(122 ,5,'',0,0);
-$pdf->Cell(25 ,5,'Fee after Concession',0,0);
-$pdf->Cell(8 ,5,'Rs',1,0);
-$pdf->Cell(34 ,5,$amtToPay,1,1,'R');//end of line
-
+    $pdf->Cell(97 ,5,'',0,0);
+    $pdf->Cell(50 ,5,'Fee after Concession',0,0);
+    $pdf->Cell(8 ,5,'Rs',1,0);
+    $pdf->Cell(34 ,5,$amtToPay,1,1,'R');//end of line
+}
 $pdf->Cell(122 ,5,'',0,0);
 $pdf->Cell(25 ,5,'Subtotal',0,0);
 $pdf->Cell(8 ,5,'Rs',1,0);
@@ -416,16 +603,82 @@ $pdf->Cell(122 ,5,'',0,0);
 $pdf->Cell(25 ,5,'Paid',0,0);
 $pdf->Cell(8 ,5,'Rs',1,0);
 $pdf->Cell(34 ,5,$pay,1,1,'R');
-
-$pdf->Cell(122 ,5,'',0,0);
-$pdf->Cell(25 ,5,'Total Due',0,0);
+if($newDues>0){
+$pdf->Cell(118 ,5,'',0,0);
+$pdf->Cell(29 ,5,'Current Dues',0,0);
 $pdf->Cell(8 ,5,'Rs',1,0);
 $pdf->Cell(34 ,5,$newDues,1,1,'R');//end of line
+}
+
+
 $pdf->Cell(130 ,5,'Remarks:    '.$remark,0,0);
 //$pdf->Cell(59 ,5,$rema,0,0);
-$pdf->Output($fileNl,'F');
+
+
+
+
+
 $pdf->Output();
 
+}
+
+function runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf){
+    $t3=0;
+    // echo "Month applicable" .$allMonths[$monthIndex - 1];
+                    $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
+                        admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
+                    //echo $feeQuery;
+                    $cumulativeFee = mysqli_query($conn, $feeQuery);
+                    // echo "</br>";
+                    while ($each = mysqli_fetch_array($cumulativeFee)) {
+                        $feeTitle = $each[1];
+                        $feeValue = $each[0];
+                        if($feeTitle=="ADMISSION FEE"){
+                            if($sessionStartDigits==$firstTwoDigitOfAdmNo){
+                                $pdf->Cell(100 ,5,$feeTitle,1,0);
+                                $pdf->Cell(25 ,5,$feeValue,1,0);
+                                $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                                $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                                // echo $feeTitle . " : " . $feeValue;
+                            }
+                        }else if($feeTitle=="SESSION FEE"){
+                                if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
+                                    $pdf->Cell(100 ,5,$feeTitle,1,0);
+                                    $pdf->Cell(25 ,5,$feeValue,1,0);
+                                    $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                                    $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                                    // echo $feeTitle . " : " . $feeValue;
+                                }
+                        }else{
+                                $pdf->Cell(100 ,5,$feeTitle,1,0);
+                                $pdf->Cell(25 ,5,$feeValue,1,0);
+                                $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                                $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                                // echo $feeTitle . " : " . $feeValue;
+                            }
+                        // echo "</br>";
+                        // $t1 += $feeValue;
+                    }
+                    if(!is_null($eachRoute)){
+                        $tranf = mysqli_query(
+                                        $conn,
+                                        "select rfee from transport where id='$eachRoute'"
+                                    );
+                        if(!is_bool($tranf)){
+                            $tranf1 = $tranf->fetch_assoc();
+                            $tranf1 = $tranf1["rfee"];
+                            $tranf2 = $tranf1;
+                            $t1 += $tranf2;
+                            $pdf->Cell(100 ,5,"TRANSPORT FEE ",1,0);
+                            $pdf->Cell(25 ,5,$tranf2,1,0);
+                            $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                            $pdf->Cell(39 ,5,$tranf2,1,1,'R');
+                            // echo "TRANSPORT FEE: " . $tranf2;
+                            // echo "</br>";
+                        }
+                    }
+                    //echo "</br>";
+                    // $monthIndex++;
 }
 ob_end_flush();
 ?>

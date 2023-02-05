@@ -54,6 +54,7 @@
 // echo "great";
  -->
 
+	<!DOCTYPE html>
 <html>
 	<head>
 		<title></title>
@@ -62,12 +63,15 @@
 	<body id="tb1">
 		<form action="res.php" method="get" id="final0">
 			<fieldset>
+			<legend></legend>
 <?php
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
-    echo "hi";
+    // echo "hi";
 }
-$index = $_GET["index"];
+$index = $_GET["index"]??null;
+
+// echo '<input type="text" name="index" id="index" value= "'.$index.'" />';
 $allTotal = 0;
 $dbusername = "id18479409_hemantjhil";
 $dbpassword = "Manoj1234567@";
@@ -94,9 +98,10 @@ for ($count = 0; $count <= $index; $count++) {
         //assign admno and en to p type html tag
         $eachAdmno="admno".$count;
         $eachEn="en".$count;
+        $eachSt="st".$count;
         // echo "Each Admno: ".$eachAdmno;
-        echo '<input type="text" maxlength=100 name="'.$eachAdmno.'" id="'.$eachAdmno.'" value="'.$admno.'">';
-        echo '<input type="text" maxlength=100 name="'.$eachEn.'" id="'.$eachEn.'" value="'.$en.'">';
+        echo '<input type="hidden" maxlength=100 name="'.$eachAdmno.'" id="'.$eachAdmno.'" value="'.$admno.'">';
+        echo '<input type="hidden" maxlength=100 name="'.$eachEn.'" id="'.$eachEn.'" value="'.$en.'">';
 
 
         $allMonths = [
@@ -114,7 +119,7 @@ for ($count = 0; $count <= $index; $count++) {
             "December"
         ];
         $firstTwoDigitOfAdmNo=(int)(($admno)/100);
-        $paidUptoQuery = "select paid_upto from $studentSession where admno=$admno";
+        $paidUptoQuery = "select paid_upto from $studentSession where admno='$admno'";
         $startMonth = mysqli_query($conn, $paidUptoQuery);
         echo "</br>";
         //echo $paidUptoQuery;
@@ -132,6 +137,7 @@ for ($count = 0; $count <= $index; $count++) {
         } else {
             $st += 1;
         }
+        echo '<input type="hidden" maxlength=100 name="'.$eachSt.'" id="'.$eachSt.'" value="'.$st.'">';
         echo $allMonths[$st - 1];
         echo "</br>";
         echo "End Month:     ";
@@ -165,49 +171,56 @@ for ($count = 0; $count <= $index; $count++) {
             $route = $row["transport_route"];
         }
         $t1 = 0;
+        // echo "intialized :".$feeValue;
         if ($en > 3)
         {   //when end month is before start of new year
             //echo "Month Index : ".$monthIndex;
             while ($monthIndex <= $en)
             {
-                echo "Month applicable" .$allMonths[$monthIndex - 1];
-                $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
-                    admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
-                //echo $feeQuery;
-                $cumulativeFee = mysqli_query($conn, $feeQuery);
-                echo "</br>";
-                while ($each = mysqli_fetch_array($cumulativeFee)) {
-                    $feeTitle = $each[1];
-                    $feeValue = $each[0];
-                    if($feeTitle=="ADMISSION FEE"){
-                        if($sessionStartDigits==$firstTwoDigitOfAdmNo){
-                            echo $feeTitle . " : " . $feeValue;
-                        }
-                    }else{
-                        if($feeTitle=="SESSION FEE"){
-                            if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
-                                echo $feeTitle . " : " . $feeValue;
-                            }
-                        }else{
-                            echo $feeTitle . " : " . $feeValue;
-                        }
-                    }
-                    echo "</br>";
-                    $t1 += $feeValue;
-                }
-                $tranf = mysqli_query(
-                                $conn,
-                                "select rfee from transport where id='$route'"
-                            );
-                if(!is_bool($tranf)){
-                    $tranf1 = $tranf->fetch_assoc();
-                    $tranf1 = $tranf1["rfee"];
-                    $tranf2 = $tranf1;
-                    $t1 += $tranf2;
-                    echo "Transport Fee: " . $tranf2;
-                    echo "</br>";
-                }
-                echo "</br>";
+                $t1+=runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$route,$sessionStartDigits,$firstTwoDigitOfAdmNo,$en);
+                // 
+                // echo "Month applicable" .$allMonths[$monthIndex - 1];
+                // $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
+                //     admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
+                // //echo $feeQuery;
+                // $cumulativeFee = mysqli_query($conn, $feeQuery);
+                // echo "</br>";
+                // while ($each = mysqli_fetch_array($cumulativeFee)) {
+                //     $feeTitle = $each[1];
+                //     $feeValue = $each[0];
+                //     if($feeTitle=="ADMISSION FEE"){
+                //         if($sessionStartDigits==$firstTwoDigitOfAdmNo){
+                //             echo $feeTitle . " : " . $feeValue;
+                //             $t1 += $feeValue;
+                //         }
+                //     }else if($feeTitle=="SESSION FEE"){
+                //         if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
+                //             echo $feeTitle . " : " . $feeValue;
+                //             $t1 += $feeValue;
+                //         }
+                //     }else{
+                //         echo $feeTitle . " : " . $feeValue;
+                //         $t1 += $feeValue;
+                //     }
+                //     echo "</br>";
+                    
+                //     // echo "each total: ".$t1;echo "</br>";
+                // }
+                // if(!is_null($route)){
+                //     $tranf = mysqli_query(
+                //                     $conn,
+                //                     "select rfee from transport where id='$route'"
+                //                 );
+                //     if(!is_bool($tranf)){
+                //         $tranf1 = $tranf->fetch_assoc();
+                //         $tranf1 = $tranf1["rfee"];
+                //         $tranf2 = $tranf1;
+                //         $t1 += $tranf2;
+                //         echo "Transport Fee: " . $tranf2;
+                //         echo "</br>";
+                //     }
+                // }
+                // echo "</br>";
                 $monthIndex++;
             }
         }
@@ -218,88 +231,94 @@ for ($count = 0; $count <= $index; $count++) {
                 while ($monthIndex <= 12)
                 {
                     //echo "Month Index : ".$monthIndex;
-                    echo "Month applicable" .$allMonths[$monthIndex - 1];
-                    $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
-                        admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
-                    //echo $feeQuery;
-                    $cumulativeFee = mysqli_query($conn, $feeQuery);
-                    echo "</br>";
-                    while ($each = mysqli_fetch_array($cumulativeFee)) {
-                        $feeTitle = $each[1];
-                        $feeValue = $each[0];
-                        if($feeTitle=="ADMISSION FEE"){
-                            if($sessionStartDigits==$firstTwoDigitOfAdmNo){
-                                echo $feeTitle . " : " . $feeValue;
-                            }
-                        }else{
-                            if($feeTitle=="SESSION FEE"){
-                                if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
-                                    echo $feeTitle . " : " . $feeValue;
-                                }
-                            }else{
-                                echo $feeTitle . " : " . $feeValue;
-                            }
-                        }
-                        echo "</br>";
-                        $t1 += $feeValue;
-                    }
-                    $tranf = mysqli_query(
-                                    $conn,
-                                    "select rfee from transport where id='$route'"
-                                );
-                    if(!is_bool($tranf)){
-                        $tranf1 = $tranf->fetch_assoc();
-                        $tranf1 = $tranf1["rfee"];
-                        $tranf2 = $tranf1;
-                        $t1 += $tranf2;
-                        echo "Transport Fee: " . $tranf2;
-                        echo "</br>";
-                    }
-                    echo "</br>";
+                    runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$route,$sessionStartDigits,$firstTwoDigitOfAdmNo,$en);
+                    // echo "Month applicable" .$allMonths[$monthIndex - 1];
+                    // $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
+                    //     admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
+                    // //echo $feeQuery;
+                    // $cumulativeFee = mysqli_query($conn, $feeQuery);
+                    // echo "</br>";
+                    // while ($each = mysqli_fetch_array($cumulativeFee)) {
+                    //     $feeTitle = $each[1];
+                    //     $feeValue = $each[0];
+                    //     if($feeTitle=="ADMISSION FEE"){
+                    //         if($sessionStartDigits==$firstTwoDigitOfAdmNo){
+                    //             echo $feeTitle . " : " . $feeValue;
+                    //         }
+                    //     }else{
+                    //         if($feeTitle=="SESSION FEE"){
+                    //             if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
+                    //                 echo $feeTitle . " : " . $feeValue;
+                    //             }
+                    //         }else{
+                    //             echo $feeTitle . " : " . $feeValue;
+                    //         }
+                    //     }
+                    //     echo "</br>";
+                    //     $t1 += $feeValue;
+                    // }
+                    // if(!is_null($route)){
+                    //     $tranf = mysqli_query(
+                    //                     $conn,
+                    //                     "select rfee from transport where id='$route'"
+                    //                 );
+                    //     if(!is_bool($tranf)){
+                    //         $tranf1 = $tranf->fetch_assoc();
+                    //         $tranf1 = $tranf1["rfee"];
+                    //         $tranf2 = $tranf1;
+                    //         $t1 += $tranf2;
+                    //         echo "TRANSPORT FEE : " . $tranf2;
+                    //         echo "</br>";
+                    //     }
+                    // }
+                    // echo "</br>";
                     $monthIndex++;
                 }
                 $monthIndex = 1;
                 while ($monthIndex <= $en)
                 {
                     //echo "Month Index : ".$monthIndex;
-                    echo "Month applicable" .$allMonths[$monthIndex - 1];
-                    $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
-                        admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
-                    //echo $feeQuery;
-                    $cumulativeFee = mysqli_query($conn, $feeQuery);
-                    echo "</br>";
-                    while ($each = mysqli_fetch_array($cumulativeFee)) {
-                        $feeTitle = $each[1];
-                        $feeValue = $each[0];
-                        if($feeTitle=="ADMISSION FEE"){
-                            if($sessionStartDigits==$firstTwoDigitOfAdmNo){
-                                echo $feeTitle . " : " . $feeValue;
-                            }
-                        }else{
-                            if($feeTitle=="SESSION FEE"){
-                                if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
-                                    echo $feeTitle . " : " . $feeValue;
-                                }
-                            }else{
-                                echo $feeTitle . " : " . $feeValue;
-                            }
-                        }
-                        echo "</br>";
-                        $t1 += $feeValue;
-                    }
-                    $tranf = mysqli_query(
-                                    $conn,
-                                    "select rfee from transport where id='$route'"
-                                );
-                    if(!is_bool($tranf)){
-                        $tranf1 = $tranf->fetch_assoc();
-                        $tranf1 = $tranf1["rfee"];
-                        $tranf2 = $tranf1;
-                        $t1 += $tranf2;
-                        echo "Transport Fee: " . $tranf2;
-                        echo "</br>";
-                    }
-                    echo "</br>";
+                    runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$route,$sessionStartDigits,$firstTwoDigitOfAdmNo,$en);
+                    // echo "Month applicable" .$allMonths[$monthIndex - 1];
+                    // $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
+                    //     admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
+                    // //echo $feeQuery;
+                    // $cumulativeFee = mysqli_query($conn, $feeQuery);
+                    // echo "</br>";
+                    // while ($each = mysqli_fetch_array($cumulativeFee)) {
+                    //     $feeTitle = $each[1];
+                    //     $feeValue = $each[0];
+                    //     if($feeTitle=="ADMISSION FEE"){
+                    //         if($sessionStartDigits==$firstTwoDigitOfAdmNo){
+                    //             echo $feeTitle . " : " . $feeValue;
+                    //         }
+                    //     }else{
+                    //         if($feeTitle=="SESSION FEE"){
+                    //             if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
+                    //                 echo $feeTitle . " : " . $feeValue;
+                    //             }
+                    //         }else{
+                    //             echo $feeTitle . " : " . $feeValue;
+                    //         }
+                    //     }
+                    //     echo "</br>";
+                    //     $t1 += $feeValue;
+                    // }
+                    // if(!is_null($route)){
+                    //     $tranf = mysqli_query(
+                    //                     $conn,
+                    //                     "select rfee from transport where id='$route'"
+                    //                 );
+                    //     if(!is_bool($tranf)){
+                    //         $tranf1 = $tranf->fetch_assoc();
+                    //         $tranf1 = $tranf1["rfee"];
+                    //         $tranf2 = $tranf1;
+                    //         $t1 += $tranf2;
+                    //         echo "Transport Fee: " . $tranf2;
+                    //         echo "</br>";
+                    //     }
+                    // }
+                    // echo "</br>";
                     $monthIndex++;
                 }
             } else
@@ -307,44 +326,47 @@ for ($count = 0; $count <= $index; $count++) {
                 while ($monthIndex <= $en)
                 {
                     //echo "Month Index : ".$monthIndex;
-                    echo "Month applicable" .$allMonths[$monthIndex - 1];
-                    $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
-                        admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
-                    //echo $feeQuery;
-                    $cumulativeFee = mysqli_query($conn, $feeQuery);
-                    echo "</br>";
-                    while ($each = mysqli_fetch_array($cumulativeFee)) {
-                        $feeTitle = $each[1];
-                        $feeValue = $each[0];
-                        if($feeTitle=="ADMISSION FEE"){
-                            if($sessionStartDigits==$firstTwoDigitOfAdmNo){
-                                echo $feeTitle . " : " . $feeValue;
-                            }
-                        }else{
-                            if($feeTitle=="SESSION FEE"){
-                                if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
-                                    echo $feeTitle . " : " . $feeValue;
-                                }
-                            }else{
-                                echo $feeTitle . " : " . $feeValue;
-                            }
-                        }
-                        echo "</br>";
-                        $t1 += $feeValue;
-                    }
-                    $tranf = mysqli_query(
-                                    $conn,
-                                    "select rfee from transport where id='$route'"
-                                );
-                    if(!is_bool($tranf)){
-                        $tranf1 = $tranf->fetch_assoc();
-                        $tranf1 = $tranf1["rfee"];
-                        $tranf2 = $tranf1;
-                        $t1 += $tranf2;
-                        echo "Transport Fee: " . $tranf2;
-                        echo "</br>";
-                    }
-                    echo "</br>";
+                    $t1+=runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$route,$sessionStartDigits,$firstTwoDigitOfAdmNo,$en);
+                    // echo "Month applicable" .$allMonths[$monthIndex - 1];
+                    // $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
+                    //     admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
+                    // //echo $feeQuery;
+                    // $cumulativeFee = mysqli_query($conn, $feeQuery);
+                    // echo "</br>";
+                    // while ($each = mysqli_fetch_array($cumulativeFee)) {
+                    //     $feeTitle = $each[1];
+                    //     $feeValue = $each[0];
+                    //     if($feeTitle=="ADMISSION FEE"){
+                    //         if($sessionStartDigits==$firstTwoDigitOfAdmNo){
+                    //             echo $feeTitle . " : " . $feeValue;
+                    //         }
+                    //     }else{
+                    //         if($feeTitle=="SESSION FEE"){
+                    //             if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
+                    //                 echo $feeTitle . " : " . $feeValue;
+                    //             }
+                    //         }else{
+                    //             echo $feeTitle . " : " . $feeValue;
+                    //         }
+                    //     }
+                    //     echo "</br>";
+                    //     $t1 += $feeValue;
+                    // }
+                    // if(!is_null($route)){
+                    //     $tranf = mysqli_query(
+                    //                     $conn,
+                    //                     "select rfee from transport where id='$route'"
+                    //                 );
+                    //     if(!is_bool($tranf)){
+                    //         $tranf1 = $tranf->fetch_assoc();
+                    //         $tranf1 = $tranf1["rfee"];
+                    //         $tranf2 = $tranf1;
+                    //         $t1 += $tranf2;
+                    //         echo "Transport Fee: " . $tranf2;
+                    //         echo "</br>";
+                    //     }
+                    // }
+                    // echo "</br>";
                     $monthIndex++;
                 }
             }
@@ -368,8 +390,10 @@ for ($count = 0; $count <= $index; $count++) {
         echo "</br>";
         echo "</br>";
         echo "</br>";
+
+
     }
-    echo '<input type="hidden" name="allTotal" id="allTotal" value= "$allTotal" />';
+    // echo '<input type="hidden" name="allTotal" id="allTotal" value= "$allTotal" />';
     $_SESSION["allTotal"] = $allTotal;
     echo $allTotal;
     echo "</br>";
@@ -377,14 +401,57 @@ for ($count = 0; $count <= $index; $count++) {
     $_SESSION["index"] = $index;
 }
 
+function runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$route,$sessionStartDigits,$firstTwoDigitOfAdmNo,$en){
+    $t3=0;
+    echo "Month applicable" .$allMonths[$monthIndex - 1];
+                $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
+                    admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
+                //echo $feeQuery;
+                $cumulativeFee = mysqli_query($conn, $feeQuery);
+                echo "</br>";
+                while ($each = mysqli_fetch_array($cumulativeFee)) {
+                    $feeTitle = $each[1];
+                    $feeValue = $each[0];
+                    if($feeTitle=="ADMISSION FEE"){
+                        if($sessionStartDigits==$firstTwoDigitOfAdmNo){
+                            echo $feeTitle . " : " . $feeValue;
+                            $t3 += $feeValue;
+                        }
+                    }else if($feeTitle=="SESSION FEE"){
+                        if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
+                            echo $feeTitle . " : " . $feeValue;
+                            $t3 += $feeValue;
+                        }
+                    }else{
+                        echo $feeTitle . " : " . $feeValue;
+                        $t3 += $feeValue;
+                    }
+                    echo "</br>";
+                    
+                    // echo "each total: ".$t1;echo "</br>";
+                }
+                if(!is_null($route)){
+                    $tranf = mysqli_query(
+                                    $conn,
+                                    "select rfee from transport where id='$route'"
+                                );
+                    if(!is_bool($tranf)){
+                        $tranf1 = $tranf->fetch_assoc();
+                        $tranf1 = $tranf1["rfee"];
+                        $tranf2 = $tranf1;
+                        $t3 += $tranf2;
+                        echo "Transport Fee: " . $tranf2;
+                        echo "</br>";
+                    }
+                }
+                echo "</br>";
+                return $t3;
+}
+
 // }
 
 ?>
 
-	<!DOCTYPE html>
-
-
-	<legend></legend>
 	Fees Paid:
 	<input type="integer" name="paid" id="paid" size="20"/>
 	Discount:
@@ -399,7 +466,7 @@ for ($count = 0; $count <= $index; $count++) {
 		<br/>
 		<div id="count"></div>
 	Confirm:
-	<input type = "submit" name = "login" value = "CONFIRM" />
+	<input type = "submit" name = "login" id = "login" value = "CONFIRM" />
 
 	<input type = "hidden" name = "allTotal" id="allTotal" value = "<?php echo $allTotal; ?>"/>
 	<input type = "hidden" name = "index" id="index" value = "<?php echo $index; ?>" />
