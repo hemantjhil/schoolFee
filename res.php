@@ -1,4 +1,18 @@
-
+<html>
+<title>School Fee Portal</title>
+<head>
+    <!-- <script type="text/javascript" src="add_Student.js"></script> -->
+    </head>
+<body style="background-color:aquamarine;">
+    <!-- <form action="" method="get"> -->
+<div id="student_fee0">
+    <!-- <script type="text/javascript" src="add_Student.js"></script> -->
+<fieldset>
+    <legend>FEE PAYMENT ACKNOWLEDGEMENT</legend>
+<center>
+<h1>MODERN PUBLIC SCHOOL</h1>
+<h2>JHABRA DEIPUR VARANASI</h2>
+</center>
 
 <?php
 //echo "YES";
@@ -10,42 +24,65 @@ ini_set('display_startup_errors', 1);
 // error_reporting(E_ALL);
 if (isset($_GET["login"]))
 {
-$dbusername = "id18479409_hemantjhil";
-$dbpassword = "Manoj1234567@";
-$dbname = "id18479409_modernjhabra";
-$dbhost = "localhost";
+include('config.php');
+include('sendMail.php');
+
 session_start();
 $tot=$_GET['allTotal'];  //fee of all +previous dues of all
+
+//due total before receipt generation
+$dueTotal=$_GET['dueTotal']; 
 $index=$_GET['index'];
 $disc=$_GET["disc"];    //overall discount
+$year=$_GET["select_year"];    //session year
 $route = [];
+$firstAdmno=$_GET['firstAdmno'];
+$fname=null;
+$rn1=null;
+$addr=null;
+$mob=null;
 $conn = mysqli_connect($dbhost, $dbusername, $dbpassword, $dbname);
 
 // echo "total: ".$tot;
 // echo "index: ".$index;
 //echo "disc: ".$disc;
-$eachDisc=$disc/($index+1);     //each person discount
+$eachDisc=$disc/($index);     //each person discount
 $amtToPay=$tot-$disc;       //amount to be paid after discount
-$eachAmtToPay=$amtToPay/($index+1);
+$eachAmtToPay=$amtToPay/($index);
 $pay=$_GET["paid"];          //paid amout by guardian
 $eachPay=$pay/($index+1);
 $remark=$_GET["remarks"];
 $newDues=$amtToPay-$pay;    //new Dues all total;
-
+$dueTotal=$_GET["dueTotal"];
 //unique identifer
 $uniqueKey= $tot.''.$index.''.$disc.''.$pay.''.$remark;
-
-$eachNewDues=$newDues/($index+1);
-$route=[];
-
-for($count=0;$count<=$index;$count++){
-    //echo "yes";
-$admno[$count]=$_GET['admno'.$count];
-$en[$count]=$_GET['en'.$count];
-$st[$count]=$_GET['st'.$count];
-//fetching start month of each student
-$year = date("m") < 4 ? date("Y") - 1 : date("Y");
+$isNew = false;
+// $year = date("m") < 4 ? date("Y") - 1 : date("Y");
 $studentSession = "student_" . $year;
+
+$eachNewDues=$newDues/($index);
+$route=[];
+$studentQuery = " select st.admno,sd.name,st.class,st.rte,sd.father_name,sd.address,sd.mob1,st.transport_route,st.amt_paid,st.dues,sd.email_id from $studentSession st left join student_detail sd on st.admno = sd.admno where
+    sd.family_id in ( select family_id from student_detail sd where sd.admno=$firstAdmno) ";
+    // echo $studentQuery;
+    // echo "</br>";
+    // echo $studentQuery;
+    // echo "</br>";
+$allStudentList = mysqli_query($conn, $studentQuery);
+$index=0;
+$count=0;
+if (isset($_GET["admno" . $count], $_GET["en" . $count])) {
+    // echo "yes";
+// echo "count " .$count;
+while ($eachStudent = mysqli_fetch_array($allStudentList)) {
+    // echo yes;
+    //echo "yes";
+$admno[$count]=$eachStudent[0];
+$en[$count]=$_GET['en0'];
+$st[$count]=$_GET['st'.$count];
+$isRTE[$count]=$eachStudent[3];
+//fetching start month of each student
+
 // $paidUptoQuery = "select paid_upto from $studentSession where admno='$admno[$count]'";
 // $startMonth = mysqli_query($conn, $paidUptoQuery);
 // $startMon = $startMonth->fetch_assoc();
@@ -60,44 +97,18 @@ $studentSession = "student_" . $year;
 // }
 
 // $tot2=$tot-$disc;
-$class=mysqli_query($conn,"select class from $studentSession where admno=$admno[$count]");
-//$re=$conn->query("$class");
-//$class1;
-$r1=$class->fetch_assoc();
-$classColumn[$count]=$r1['class'];
+$classColumn[$count]=$eachStudent[2];
+$name[$count] = $eachStudent[1];
+$fname = $eachStudent[4];
+$addr = $eachStudent[5];
+$mob = $eachStudent[6];  
+$route[$count] = $eachStudent[7];
 
-$name1=mysqli_query($conn,"select name from student_detail where admno='$admno[$count]'");
-while ($row = mysqli_fetch_array($name1)) 
-{
-    $name[$count] = $row['name'];
-}
-$fname1=mysqli_query($conn,"select father_name from student_detail where admno='$admno[$count]'");
-while ($row = mysqli_fetch_array($fname1)) 
-{
-    $fname = $row['father_name'];
-}
-$addr1=mysqli_query($conn,"select address from student_detail where admno='$admno[$count]'");
-while ($row = mysqli_fetch_array($addr1)) 
-{
-    $addr = $row['address'];
-}
-$mob1=mysqli_query($conn,"select mob1 from student_detail where admno='$admno[$count]'");
-while ($row = mysqli_fetch_array($mob1)) 
-{
-    $mob = $row['mob1'];  
-}
-$route1=mysqli_query($conn,"select transport_route from $studentSession where admno='$admno[$count]'");
-$route[$count] = null;
-// echo "count : ".$count;
-while ($row = mysqli_fetch_array($route1))
-{
-    $route[$count] = $row['transport_route'];
+$email_id=$eachStudent[10];
     //$route=$route[$count];
-}
-        // echo $mon;
-        // echo "<br>";
-$paid=mysqli_query($conn,"select amt_paid from $studentSession where admno=$admno[$count]");
-$r3=$paid->fetch_assoc();
+        
+        //amount paid till now
+$r3=$eachStudent[8];
 //echo $eachDisc;
 
 //check unique value for idempotent handle
@@ -106,16 +117,15 @@ $receiptAss=$receipts->fetch_assoc();
 
 //$re=$conn->query("$class");
 //$class1;
-$due=mysqli_query($conn,"select dues from $studentSession where admno='$admno[$count]'");
-$due1=$due->fetch_assoc();
-// $dueCell=$due1[$count];
-$dueEach[$count]=$due1['dues'];
+
+$dueEach[$count]=$eachStudent[9];
 
 $isNew = false;
 $rn1=null;
 // echo $receipts;
 if(is_null($receiptAss)){
 $isNew=true;
+// echo "each disc" . $admno[$count];
 $sql0="update $studentSession set discount=$eachDisc+discount where admno='$admno[$count]'";
 if(mysqli_query($conn,$sql0)){
 
@@ -148,16 +158,22 @@ if(mysqli_query($conn,$sql2)){
 // $tot1=$tot+$dueEach;
 // $tot3=$tot2+$due1;  //previous dues+fee after dues
 // $dues=$tot3-$pay;
-
-
+$count++;
+$index++;
 }
 
 $allAdmNo="";
 $allNames="";
-for($i=0;$i<=$index;$i++){
-    $allAdmNo.=$admno[$i].',';
-    // $allAdmno.=',';
-    $allNames.=$name[$i].',';
+
+for($i=0;$i<$index;$i++){
+    if($i<$index-1){
+        $allAdmNo.=$admno[$i].',';
+        // $allAdmno.=',';
+        $allNames.=$name[$i].',';
+    }else{
+        $allAdmNo.=$admno[$i];
+        $allNames.=$name[$i];
+    }
 }
 //update receipt
 if($isNew){
@@ -191,7 +207,7 @@ $month=date("F");
 //}
 //$dir="F:\school\SCHOOL\Student fee details 2019-20\\{$month}\\{$Date1}";
 
-$fileNl=$allAdmNo.".pdf";
+$fileNl=$allNames."".$Date1."".".pdf";
 
         //echo $total;
 
@@ -237,6 +253,7 @@ $pdf->Cell(130 ,5,'Mail ID modern@mpsvns.in',0,0);
 $pdf->Cell(25 ,5,'Student ID',0,0);
 
 $pdf->Cell(34 ,5,$allAdmNo,0,1);//end of line
+// $pdf->Cell(130 ,5,'',0,0);
 
 //make a dummy empty cell as a vertical spacer
 $pdf->Cell(189 ,10,'',0,1);//end of line
@@ -258,7 +275,8 @@ $pdf->Cell(90 ,5,$addr,0,1);
 
 $pdf->Cell(10 ,5,'',0,0);
 $pdf->Cell(90 ,5,$mob,0,1);
-
+$pdf->Cell(35 ,5,'Student MAIL ID: ',0,0);
+$pdf->Cell(34 ,5,$email_id,0,1);
 //make a dummy empty cell as a vertical spacer
 //$pdf->Cell(189 ,10,'',0,1);//end of line
 
@@ -274,27 +292,17 @@ $pdf->SetFont('Arial','',12);
 
 // $t1=0;
 //Numbers are right-aligned so we give 'R' after new line parameter
-for($i=0;$i<=$index;$i++){
+// echo $index;
+for($i=0;$i<$index;$i++){
 $admno=$admno[$i];
 $eachEn=$en[$i];
 $eachRoute=$route[$i];
 $eachDues=$dueEach[$i];
+$isRTE=$isRTE[$i];
+
 //initalizing total amount 0
 $t1 = 0;
-$allMonths = [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December"
-        ];
+
 
 $firstTwoDigitOfAdmNo=(int)(($admno)/100);
 $sessionStartDigits=fmod($year,100);
@@ -308,7 +316,8 @@ if ($eachEn > 3)
             while ($monthIndex <= $eachEn)
             {
                 
-                runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf);
+                runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf,$isRTE);
+                // echo "1";
                 // echo "Month applicable" .$allMonths[$monthIndex - 1];
                 // $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
                 //     admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
@@ -373,7 +382,8 @@ else{ //when end month is in start of new year
                 while ($monthIndex <= 12)
                 {
                     // 
-                    runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$t1,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf);
+                    runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf,$isRTE);
+                    // echo "2";
                     //echo "Month Index : ".$monthIndex;
                     // echo "Month applicable" .$allMonths[$monthIndex - 1];
                     // $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
@@ -436,7 +446,8 @@ else{ //when end month is in start of new year
                 $monthIndex = 1;
                 while ($monthIndex <= $eachEn)
                 {
-                    runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$t1,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf);
+                    runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf,$isRTE);
+                    // echo "3";
                     //echo "Month Index : ".$monthIndex;
                     // echo "Month applicable" .$allMonths[$monthIndex - 1];
                     // $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
@@ -500,7 +511,9 @@ else{ //when end month is in start of new year
             {   //when start month is also in new year
                 while ($monthIndex <= $eachEn)
                 {
-                    runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$t1,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf);
+                    // echo "4";
+                    runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf,$isRTE);
+                    
                     //echo "Month Index : ".$monthIndex;
                     // echo "Month applicable" .$allMonths[$monthIndex - 1];
                     // $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
@@ -567,17 +580,17 @@ else{ //when end month is in start of new year
 
 }
 
-            $pdf->Cell(100 ,5,"PREVIOUS DUES ",1,0);
-            $pdf->Cell(25 ,5,$eachDues,1,0);
-            $pdf->Cell(25 ,5,'-',1,0);
-            $pdf->Cell(39 ,5,$eachDues,1,1,'R');
 
 
 
 
 }
+//email
 
-
+$pdf->Cell(100 ,5,"PREVIOUS DUES ",1,0);
+$pdf->Cell(25 ,5,$dueTotal,1,0);
+$pdf->Cell(25 ,5,'-',1,0);
+$pdf->Cell(39 ,5,$dueTotal,1,1,'R');
 
 $pdf->Cell(122 ,5,'',0,0);
 $pdf->Cell(25 ,5,'Total',0,0);
@@ -593,11 +606,12 @@ if($disc>0){
     $pdf->Cell(50 ,5,'Fee after Concession',0,0);
     $pdf->Cell(8 ,5,'Rs',1,0);
     $pdf->Cell(34 ,5,$amtToPay,1,1,'R');//end of line
+}else{
+    $pdf->Cell(122 ,5,'',0,0);
+    $pdf->Cell(25 ,5,'Subtotal',0,0);
+    $pdf->Cell(8 ,5,'Rs',1,0);
+    $pdf->Cell(34 ,5,$amtToPay,1,1,'R');
 }
-$pdf->Cell(122 ,5,'',0,0);
-$pdf->Cell(25 ,5,'Subtotal',0,0);
-$pdf->Cell(8 ,5,'Rs',1,0);
-$pdf->Cell(34 ,5,$amtToPay,1,1,'R');
 //
 $pdf->Cell(122 ,5,'',0,0);
 $pdf->Cell(25 ,5,'Paid',0,0);
@@ -618,48 +632,98 @@ $pdf->Cell(130 ,5,'Remarks:    '.$remark,0,0);
 
 
 
-$pdf->Output();
 
+$pdfdoc = $pdf->Output("", "S");
+
+
+// $pdf->Output();
+//$ok=mail_attachment("accounts@mpsvns.in",$email_id, "FEE RECEIPT" ,"Dear Parents/Student This message is ragrding your payment confirmation. Please find attached the receipt. Thank You!!!",$pdfdoc,$fileNl);
+$ok=mail_attachment("accounts@mpsvns.in","modern@mpsvns.in", "FEE RECEIPT" ,"Dear Parents/Student This message is ragrding your payment confirmation. Please find attached the receipt. Thank You!!!",$pdfdoc,$fileNl);
+// $pdf->Cell(130 ,5,'Mail:    '.$ok,0,0);
+// $pdf->Output('D',$fileNl);
+echo "<center>";
+
+echo "Student Names: ".$allNames;
+echo "</br>";
+echo "</br>";
+
+echo "Amount Paid:  ".$pay;
+echo "</br>";
+echo "</br>";
+
+echo "New Dues: ".$newDues;
+echo "</br>";
+echo "</br>";
+echo "</center>";
+// $pdf->Output('F','../filename.pdf');
+// $pdf->Output('D',$fileNl);
+ob_end_flush();
+}
 }
 
-function runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf){
+function runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$eachRoute,$sessionStartDigits,$firstTwoDigitOfAdmNo,$eachEn,$pdf , $isRTE){
     $t3=0;
+
+    // echo "yes";
+    // echo $isRTE;
     // echo "Month applicable" .$allMonths[$monthIndex - 1];
-                    $feeQuery = "select fee,type from fees where class in ('ALL',(select class from $studentSession where
+                    $feeQuery = "select fee,type,month_show,frequency from fees where class in ('ALL',(select class from $studentSession where
                         admno=$admno)) and months_applicable in ($monthIndex,'ALL')";
                     //echo $feeQuery;
                     $cumulativeFee = mysqli_query($conn, $feeQuery);
                     // echo "</br>";
-                    while ($each = mysqli_fetch_array($cumulativeFee)) {
-                        $feeTitle = $each[1];
-                        $feeValue = $each[0];
-                        if($feeTitle=="ADMISSION FEE"){
-                            if($sessionStartDigits==$firstTwoDigitOfAdmNo){
-                                $pdf->Cell(100 ,5,$feeTitle,1,0);
-                                $pdf->Cell(25 ,5,$feeValue,1,0);
-                                $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
-                                $pdf->Cell(39 ,5,$feeValue,1,1,'R');
-                                // echo $feeTitle . " : " . $feeValue;
-                            }
-                        }else if($feeTitle=="SESSION FEE"){
-                                if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
+
+                    if($isRTE==='0' || is_null($isRTE)){
+                        // echo "yes";
+                        // echo "yes";
+                        while ($each = mysqli_fetch_array($cumulativeFee)) {
+                            $feeTitle = $each[1];
+                            $feeValue = $each[0];
+                            if($feeTitle=="ADMISSION FEE"){
+                                if($sessionStartDigits==$firstTwoDigitOfAdmNo){
                                     $pdf->Cell(100 ,5,$feeTitle,1,0);
                                     $pdf->Cell(25 ,5,$feeValue,1,0);
                                     $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
                                     $pdf->Cell(39 ,5,$feeValue,1,1,'R');
                                     // echo $feeTitle . " : " . $feeValue;
                                 }
-                        }else{
+                            }else if($feeTitle=="SESSION FEE"){
+                                    if($sessionStartDigits!=$firstTwoDigitOfAdmNo){
+                                        $pdf->Cell(100 ,5,$feeTitle,1,0);
+                                        $pdf->Cell(25 ,5,$feeValue,1,0);
+                                        $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                                        $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                                        // echo $feeTitle . " : " . $feeValue;
+                                    }
+                            }else if($feeTitle=="TUTION FEE"){
+                                $frequency = $each[3];
+                                $month_show = $each[2];
+                                $feeValue = $feeValue*$frequency;
                                 $pdf->Cell(100 ,5,$feeTitle,1,0);
                                 $pdf->Cell(25 ,5,$feeValue,1,0);
-                                $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                                $pdf->Cell(25 ,5,$month_show,1,0);
                                 $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                                // echo "Months for: ".$month_show;
+                                // echo "</br>";
+                                
                                 // echo $feeTitle . " : " . $feeValue;
+                                // $t3 += $feeValue;
+
                             }
-                        // echo "</br>";
-                        // $t1 += $feeValue;
+
+                            else{
+                                    $pdf->Cell(100 ,5,$feeTitle,1,0);
+                                    $pdf->Cell(25 ,5,$feeValue,1,0);
+                                    $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
+                                    $pdf->Cell(39 ,5,$feeValue,1,1,'R');
+                                    // echo $feeTitle . " : " . $feeValue;
+                                }
+                            // echo "</br>";
+                            // $t1 += $feeValue;
+                        }
                     }
-                    if(!is_null($eachRoute)){
+                    // echo "Route: ".$eachRoute;
+                    if(!is_null($eachRoute) && $eachRoute!=0){
                         $tranf = mysqli_query(
                                         $conn,
                                         "select rfee from transport where id='$eachRoute'"
@@ -668,7 +732,8 @@ function runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$eachRou
                             $tranf1 = $tranf->fetch_assoc();
                             $tranf1 = $tranf1["rfee"];
                             $tranf2 = $tranf1;
-                            $t1 += $tranf2;
+                            // $t1 += $tranf2;
+                            // echo $pdf;
                             $pdf->Cell(100 ,5,"TRANSPORT FEE ",1,0);
                             $pdf->Cell(25 ,5,$tranf2,1,0);
                             $pdf->Cell(25 ,5,$allMonths[$monthIndex-1],1,0);
@@ -677,8 +742,15 @@ function runFeeAlgo($monthIndex,$allMonths,$studentSession,$admno,$conn,$eachRou
                             // echo "</br>";
                         }
                     }
+                
                     //echo "</br>";
                     // $monthIndex++;
 }
 ob_end_flush();
 ?>
+    <br/>
+    </fieldset>
+</form>
+
+</body>
+</html>

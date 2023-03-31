@@ -8,7 +8,7 @@ $conn = mysqli_connect($dbhost, $dbusername, $dbpassword, $dbname);
 
 
 //getting file name from DB
-$fileKey='admit-card-file-name';
+$fileKey='oral-exam-mark-list';
 $fileName = mysqli_query(
             $conn,
             "select value from constants where constant_key = '$fileKey' "
@@ -30,9 +30,10 @@ $classValue = $classAss["value"];
 
 //getting the student list
 $year = date("m") < 4 ? date("Y") - 1 : date("Y");
+$current_year=date("Y");
 $studentSession = "student_" . $year;
 $studentListQuery = "SELECT sy.admno,sd.name FROM $studentSession sy
-    JOIN student_detail sd on sd.admno=sy.admno WHERE sy.class= '$classValue' ";
+    JOIN student_detail sd on sd.admno=sy.admno WHERE sy.class= '$classValue' ORDER BY sd.name ";
                 //echo $feeQuery;
 $studentList = mysqli_query($conn, $studentListQuery);
 // echo "</br>";
@@ -60,26 +61,36 @@ $pages_count = $pdf->setSourceFile($fileValue);
 $pdf->SetFont('Arial','',12);
 $even=true;
 
+$Y_POS=23;
+$pdf->AddPage();
+$tplIdx = $pdf->importPage(1);
+$pdf->useTemplate($tplIdx, 0, 0);
+$pdf -> SetY(19);
+$pdf -> SetX(85);
+$pdf->Cell(27 ,5,$current_year.', CLASS-  ',0,0);
+$pdf->Cell(117 ,5,$classValue,0,1);
+$pdf -> SetY($Y_POS);
+$pdf -> SetX(19);
+$count=0;
 while ($each = mysqli_fetch_array($studentList)) {
     $admno = $each[0];
     $name = $each[1];
     // $pdf->SetFont('Times', '', 6);
     // $pdf->SetTextColor(192, 192, 192);
-    if($even){
-        $pdf->AddPage();
-        $tplIdx = $pdf->importPage(1);
-        $pdf->useTemplate($tplIdx, 0, 0);
-        $pdf -> SetY(29);
-        $pdf -> SetX(30);
-        $even=false;
+    $count++;
+    if($count<26){
+        $pdf -> SetY($Y_POS);
+    $pdf -> SetX(19);
+    $pdf->Cell(217 ,$Y_POS,$name,0,1);
+    
+    $Y_POS+=4.38;
     }else{
-        $pdf -> SetY(174);
-        $pdf -> SetX(30);
-        $even=true;
+        $pdf -> SetY($Y_POS);
+    $pdf -> SetX(19);
+    $pdf->Cell(217 ,$Y_POS,$name,0,1);
+    
+    $Y_POS+=1.38;
     }
-    $pdf->Cell(117 ,5,$name,0,0);
-    $pdf->Cell(35 ,5,$classValue,0,0);
-    $pdf->Cell(10 ,5,$admno,0,0);
 }
 
 // $pdf->Output($fileNl,'F');
